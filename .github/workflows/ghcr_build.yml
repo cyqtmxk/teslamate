@@ -75,8 +75,8 @@ jobs:
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
         with:
           registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: cyqtmxk
+          password: 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
       - name: Merge
         id: merge
         uses: ./.github/actions/merge
