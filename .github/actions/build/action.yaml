@@ -58,10 +58,3 @@ runs:
         digest="${{ steps.build.outputs.digest }}"
         touch "/tmp/digests/${digest#sha256:}"
         ls -l /tmp/digests/
-    - name: Upload digest
-      uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
-      with:
-        name: single-digest-${{ matrix.cache_id }}
-        path: /tmp/digests/*
-        if-no-files-found: error
-        retention-days: 1
