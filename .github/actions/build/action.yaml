@@ -11,7 +11,7 @@ inputs:
   repository_owner:
     description: "Repository owner"
     required: true
-    default: "teslamate-org"
+    default: "cyqtmxk"
   repository:
     description: "Repo owner and name (repo_owner/repo_name)"
     required: true
