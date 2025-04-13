@@ -49,8 +49,8 @@ runs:
       uses: docker/login-action@0d4c9c5ea7693da7b068278f7b52bda2a190a446 # v3.2.0
       with:
         registry: ghcr.io
-        username: cyqtmxk
-        password: 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
+        username: ${{ inputs.repository_owner }}
+        password: ${{ inputs.github_token }}
    - name: Build and push by digest
       id: build
       uses: docker/build-push-action@1a162644f9a7e87d8f4b053101d1d9a712edc18c # v6.3.0
