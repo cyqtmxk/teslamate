@@ -45,15 +45,3 @@ runs:
       with:
         username: yatsing
         password: ${{ inputs.docker_password }}
-   - name: Build and push by digest
-      id: build
-      uses: docker/build-push-action@1a162644f9a7e87d8f4b053101d1d9a712edc18c # v6.3.0
-      with:
-        context: .
-        platforms: ${{ matrix.platform }}
-        labels: ${{ steps.meta.outputs.labels }}
-        tags: ${{ steps.docker_meta.outputs.tags }}
-        cache-from: type=registry,ref=ghcr.io/${{ inputs.repository }}:buildcache-${{ matrix.cache_id }}-${{ inputs.version }}
-        cache-to: type=registry,ref=ghcr.io/${{ inputs.repository }}:buildcache-${{ matrix.cache_id }}-${{ inputs.version }},mode=max
-        outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
-
