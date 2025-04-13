@@ -57,7 +57,7 @@ runs:
       with:
         context: .
         push: true
-        platforms: ${{ matrix.platform }}
+        platforms:  linux/amd64
         labels: ${{ steps.meta.outputs.labels }}
         tags: ${{ steps.docker_meta.outputs.tags }}
         cache-from: type=gha
