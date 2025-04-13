@@ -57,30 +57,7 @@ jobs:
           github_token: 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
           version: ${{ github.ref_name }}
 
-  teslamate_merge:
-    runs-on: ubuntu-24.04
-    needs:
-      - check_paths
-      - teslamate_build
-    if: needs.check_paths.outputs.githubfolder != 'true' || github.event_name == 'schedule'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
-        with:
-          username: yatsing
-          password: dckr_pat_8s0fEwhXHdCac82uT4CoeNGNsok
-
-      - uses: ./.github/actions/merge
-        with:
-          image: ${{ env.REGISTRY_IMAGE }}
-          tags: |
-            type=schedule,pattern=edge
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=edge
   grafana:
     needs: check_paths
     if: needs.check_paths.outputs.githubfolder != 'true' || github.event_name == 'schedule'
