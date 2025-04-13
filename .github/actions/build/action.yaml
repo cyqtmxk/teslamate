@@ -45,3 +45,34 @@ runs:
       with:
         username: yatsing
         password: ${{ inputs.docker_password }}
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@0d4c9c5ea7693da7b068278f7b52bda2a190a446 # v3.2.0
+      with:
+        registry: ghcr.io
+        username: ${{ inputs.repository_owner }}
+        password: ${{ inputs.github_token }}
+    - name: Build and push by digest
+      id: build
+      uses: docker/build-push-action@1a162644f9a7e87d8f4b053101d1d9a712edc18c # v6.3.0
+      with:
+        context: .
+        platforms: ${{ matrix.platform }}
+        labels: ${{ steps.meta.outputs.labels }}
+        tags: ${{ steps.docker_meta.outputs.tags }}
+        cache-from: type=registry,ref=ghcr.io/${{ inputs.repository }}:buildcache-${{ matrix.cache_id }}-${{ inputs.version }}
+        cache-to: type=registry,ref=ghcr.io/${{ inputs.repository }}:buildcache-${{ matrix.cache_id }}-${{ inputs.version }},mode=max
+        outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+    - name: Export digest
+      shell: bash
+      run: |
+        mkdir -p /tmp/digests
+        digest="${{ steps.build.outputs.digest }}"
+        touch "/tmp/digests/${digest#sha256:}"
+        ls -l /tmp/digests/
+    - name: Upload digest
+      uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
+      with:
+        name: single-digest-${{ matrix.cache_id }}
+        path: /tmp/digests/*
+        if-no-files-found: error
+        retention-days: 1
