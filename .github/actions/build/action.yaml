@@ -62,17 +62,4 @@ runs:
         cache-from: type=registry,ref=ghcr.io/${{ inputs.repository }}:buildcache-${{ matrix.cache_id }}-${{ inputs.version }}
         cache-to: type=registry,ref=ghcr.io/${{ inputs.repository }}:buildcache-${{ matrix.cache_id }}-${{ inputs.version }},mode=max
         outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
-    - name: Export digest
-      shell: bash
-      run: |
-        mkdir -p /tmp/digests
-        digest="${{ steps.build.outputs.digest }}"
-        touch "/tmp/digests/${digest#sha256:}"
-        ls -l /tmp/digests/
-    - name: Upload digest
-      uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
-      with:
-        name: single-digest-${{ matrix.cache_id }}
-        path: /tmp/digests/*
-        if-no-files-found: error
-        retention-days: 1
+
