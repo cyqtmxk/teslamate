@@ -11,7 +11,7 @@ inputs:
   image:
     description: "Image target"
     required: true
-    default: "teslamate/grafana"
+    default: "yatsing/grafana"
 runs:
   using: "composite"
   steps:
