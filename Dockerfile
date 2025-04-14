@@ -15,6 +15,15 @@ RUN apt-get update \
     && apt-get install nodejs -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+RUN apt update && apt upgrade -y \
+    &&  apt install make -y \
+    &&  apt install ninja-build -y \
+    &&  apt-get install libpixman-1-dev \
+    && wget https://download.qemu.org/qemu-7.0.0.tar.xz \
+    && tar xvJf qemu-7.0.0.tar.xz \
+    && cd qemu-7.0.0 \
+    && ./configure \
+    && make
 
 RUN mix local.rebar --force && \
     mix local.hex --force
