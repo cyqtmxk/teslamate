@@ -2,7 +2,6 @@ FROM elixir:1.17.3-otp-26 AS builder
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-
 RUN apt-get update \
     && apt-get install -y ca-certificates curl gnupg \
     && mkdir -p /etc/apt/keyrings \
@@ -10,20 +9,11 @@ RUN apt-get update \
      | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
     && NODE_MAJOR=20 \
     && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" \
-    | tee /etc/apt/sources.list.d/nodesource.list \
+     | tee /etc/apt/sources.list.d/nodesource.list \
     && apt-get update \
     && apt-get install nodejs -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
-RUN apt update && apt upgrade -y \
-    &&  apt install make -y \
-    &&  apt install ninja-build -y \
-    &&  apt-get install libpixman-1-dev \
-    && wget https://download.qemu.org/qemu-7.0.0.tar.xz \
-    && tar xvJf qemu-7.0.0.tar.xz \
-    && cd qemu-7.0.0 \
-    && ./configure \
-    && make
 
 RUN mix local.rebar --force && \
     mix local.hex --force
