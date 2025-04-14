@@ -37,9 +37,9 @@ jobs:
           - platform: "linux/arm/v7"
             runs_on: "ubuntu-24.04"
             cache_id: arm
-          - platform: "linux/arm64"
+          - platform: "linux/arm/v8"
             runs_on: "ubuntu-24.04"
-            cache_id: arm64
+            cache_id: arm
     runs-on: ${{ matrix.runs_on }}
     timeout-minutes: 1000
 
