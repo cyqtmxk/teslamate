@@ -37,8 +37,7 @@ jobs:
           - platform: "linux/arm/v7"
             runs_on: "ubuntu-24.04"
             cache_id: arm
-          - platform: "linux/arm64"            
-            runs-on: self-hosted
+          - runner: self-hosted
     runs-on: ${{ matrix.runs_on }}     
     timeout-minutes: 1000
 
