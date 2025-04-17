@@ -27,11 +27,8 @@ jobs:
   teslamate_build:
     needs: check_paths
     if: needs.check_paths.outputs.githubfolder != 'true' || github.event_name == 'schedule'
-    strategy:
-      fail-fast: false
-      runs-on: self-hosted
-      cache_id: arm64
-      
+    
+    runs-on: self-hosted     
     timeout-minutes: 1000
 
     steps:
