@@ -60,7 +60,7 @@ runs:
         labels: ${{ steps.meta.outputs.labels }}
         tags: ${{ steps.docker_meta.outputs.tags }}
         cache-from: type=registry,ref=ghcr.io/cyqtmxk/teslamate:buildcache-${{ matrix.cache_id }}-${{ inputs.version }}
-        cache-to: type=registry,ref=ghcr.io/cyqtmxk/teslamte:buildcache-${{ matrix.cache_id }}-${{ inputs.version }},mode=max
+        cache-to: type=registry,ref=ghcr.io/cyqtmxk/teslamate:buildcache-${{ matrix.cache_id }}-${{ inputs.version }},mode=max
         outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true     
     - name: Export digest
       shell: bash
