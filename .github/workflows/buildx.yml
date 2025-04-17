@@ -31,17 +31,11 @@ jobs:
       fail-fast: false
       matrix:
         include:  
-          - platform: "linux/amd64"
-            runs_on: "ubuntu-24.04"
-            cache_id: amd64
-          - platform: "linux/arm/v7"
-            runs_on: "ubuntu-24.04"
-            cache_id: arm
           - platform: "linux/arm64"
             runs-on: self-hosted
             cache_id: arm64
             
-    runs-on: self-hosted
+    runs-on: ${{ matrix.runs_on }}
     timeout-minutes: 1000
 
     steps:
