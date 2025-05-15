@@ -76,7 +76,7 @@ jobs:
         with:
           registry: ghcr.io
           username: cyqtmxk
-          password: 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
+          password: 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
       - name: Merge
         id: merge
         uses: ./.github/actions/merge
