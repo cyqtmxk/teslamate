@@ -50,7 +50,7 @@ runs:
       with:
         registry: ghcr.io
         username: cyqtmxk
-        password: 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
+        password: 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
     - name: Build and push by digest
       id: build
       uses: docker/build-push-action@1a162644f9a7e87d8f4b053101d1d9a712edc18c # v6.3.0
