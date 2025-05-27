@@ -1,0 +1,423 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "$$hashKey": "object:75",
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": 31,
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [
+        "tesla"
+      ],
+      "targetBlank": false,
+      "title": "Dashboards",
+      "tooltip": "",
+      "type": "dashboards",
+      "url": ""
+    },
+    {
+      "asDropdown": false,
+      "icon": "doc",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": true,
+      "title": "文档",
+      "tooltip": "",
+      "type": "link",
+      "url": "https://docs.teslamate.org"
+    }
+  ],
+  "panels": [
+    {
+      "datasource": "TeslaMate",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#9ea39d"
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
+      "id": 9,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.6.0",
+      "targets": [
+        {
+          "datasource": "TeslaMate",
+          "format": "table",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  convert_tire_pressure(tpms_pressure_fl, '$pressure_unit') AS \"左前\",\n  convert_tire_pressure(tpms_pressure_fr, '$pressure_unit') AS \"右前\",\n  convert_tire_pressure(tpms_pressure_rl, '$pressure_unit') AS \"左后\",\n  convert_tire_pressure(tpms_pressure_rr, '$pressure_unit') AS \"右后\"\nFROM positions\nWHERE\n  car_id = $car_id\n  AND tpms_pressure_fl IS NOT NULL\n  AND tpms_pressure_fr IS NOT NULL\n  AND tpms_pressure_rl IS NOT NULL\n  AND tpms_pressure_rr IS NOT NULL\nORDER BY date DESC \nLIMIT 1",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "efficiency"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "cars",
+          "timeColumn": "inserted_at",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "当前胎压 ($pressure_unit)",
+      "type": "stat"
+    },
+    {
+      "datasource": "TeslaMate",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#bbbbc1e6",
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "date"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsLocal"
+              },
+              {
+                "id": "displayName",
+                "value": "开始驾驶时间"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/.*_ts/"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/.*left/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/.*right/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "drive_id"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Drive ID"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 20,
+        "x": 4,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "mean"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "11.6.0",
+      "targets": [
+        {
+          "datasource": "TeslaMate",
+          "format": "table",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "WITH ps AS (\n\tSELECT \n\t\tdrive_id, \n\t\tdate,\n\t\tROW_NUMBER() OVER (PARTITION BY drive_id ORDER BY date ASC) as seqnum,\n\t\tconvert_tire_pressure(tpms_pressure_fl, '$pressure_unit') AS front_left,\n\t\tconvert_tire_pressure(tpms_pressure_fr, '$pressure_unit') AS front_right,\n\t\tconvert_tire_pressure(tpms_pressure_rl, '$pressure_unit') AS rear_left,\n\t\tconvert_tire_pressure(tpms_pressure_rr, '$pressure_unit') AS rear_right\n\tFROM positions\n\tWHERE\n\t\t$__timeFilter(date)\n\t\tAND tpms_pressure_fl IS NOT NULL\n\t\tAND tpms_pressure_fr IS NOT NULL\n    AND tpms_pressure_rl IS NOT NULL\n    AND tpms_pressure_rr IS NOT NULL\n\t\tAND drive_id IS NOT NULL\n\t\tAND car_id = $car_id\n)\nSELECT \n\tdrive_id,\n\tdate,\n\tfront_left AS \"左前\", \n\tfront_right AS \"右前\", \n\trear_left AS \"左后\", \n\trear_right AS \"右后\"\nFROM ps\nWHERE seqnum = 5\nORDER BY ps.drive_id DESC",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "efficiency"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "cars",
+          "timeColumn": "inserted_at",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "Tire pressure in selected period",
+      "type": "table"
+    },
+    {
+      "datasource": "TeslaMate",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#9ea39d"
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 4,
+        "x": 0,
+        "y": 7
+      },
+      "id": 10,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.6.0",
+      "targets": [
+        {
+          "datasource": "TeslaMate",
+          "format": "table",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "WITH ps AS (\n\tSELECT \n\t\tROW_NUMBER() OVER (PARTITION BY drive_id ORDER BY date ASC) as seqnum,\n\t\tconvert_tire_pressure(tpms_pressure_fl, '$pressure_unit') AS front_left,\n\t\tconvert_tire_pressure(tpms_pressure_fr, '$pressure_unit') AS front_right,\n\t\tconvert_tire_pressure(tpms_pressure_rl, '$pressure_unit') AS rear_left,\n\t\tconvert_tire_pressure(tpms_pressure_rr, '$pressure_unit') AS rear_right\n\tFROM positions p\n\tWHERE\n\t\ttpms_pressure_fl IS NOT NULL\n\t\tAND tpms_pressure_fr IS NOT NULL\n    AND tpms_pressure_rl IS NOT NULL\n    AND tpms_pressure_rr IS NOT NULL\n\t\tAND drive_id = (\n\t\t\tSELECT id\n\t\t\tFROM drives\n\t\t\tWHERE \n\t\t\t\tcar_id = $car_id\n\t\t\t\tAND end_date IS NOT NULL\n\t\t\tORDER BY start_date DESC\n\t\t\tLIMIT 1\n\t\t)\n)\nSELECT \n\tfront_left AS \"左前\", \n\tfront_right AS \"右前\", \n\trear_left AS \"左后\", \n\trear_right AS \"右后\"\nFROM ps\nWHERE seqnum = 5",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "efficiency"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "cars",
+          "timeColumn": "inserted_at",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "最后一次行驶的胎压 ($pressure_unit)",
+      "type": "stat"
+    }
+  ],
+  "preload": false,
+  "refresh": "",
+  "schemaVersion": 41,
+  "tags": [
+    "tesla"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "Model Y",
+          "value": "1"
+        },
+        "datasource": "TeslaMate",
+        "definition": "SELECT name AS __text, id AS __value FROM cars ORDER BY display_priority ASC, name ASC;",
+        "includeAll": false,
+        "label": "Car",
+        "name": "car_id",
+        "options": [],
+        "query": "SELECT name AS __text, id AS __value FROM cars ORDER BY display_priority ASC, name ASC;",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "datasource": "TeslaMate",
+        "definition": "select base_url from settings limit 1;",
+        "hide": 2,
+        "includeAll": false,
+        "name": "base_url",
+        "options": [],
+        "query": "select base_url from settings limit 1;",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "bar",
+          "value": "bar"
+        },
+        "datasource": "TeslaMate",
+        "definition": "SELECT unit_of_pressure FROM settings LIMIT 1",
+        "hide": 2,
+        "includeAll": false,
+        "name": "pressure_unit",
+        "options": [],
+        "query": "SELECT unit_of_pressure FROM settings LIMIT 1",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-90d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "胎压",
+  "uid": "q4YF9XA4k",
+  "version": 1
+}
