@@ -25,6 +25,11 @@ updates:
     schedule:
       interval: "monthly"
 
+  - package-ecosystem: "docker"
+    directory: "/wechat_teslamate"
+    schedule:
+      interval: "monthly"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
