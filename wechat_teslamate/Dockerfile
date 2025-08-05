@@ -16,7 +16,7 @@ COPY requirements.txt /app/requirements.txt
 RUN pip install --upgrade pip
 
 # 安装依赖库
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple
 
 # 将当前目录的文件复制到容器内
 COPY . /app
