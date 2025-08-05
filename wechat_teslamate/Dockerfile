@@ -12,8 +12,8 @@ WORKDIR /app
 # 将 requirements.txt 复制到容器内
 COPY requirements.txt /app/requirements.txt
 
-# 安装 pip 的最新版本
-RUN pip install --upgrade pip
+# 安装 pip 等的最新版本
+RUN pip install --upgrade wheel setuptools pip
 
 # 安装依赖库
 RUN pip install --no-cache-dir -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple
