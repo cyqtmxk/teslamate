@@ -18,6 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
+  "id": 27,
   "links": [
     {
       "icon": "dashboard",
@@ -38,7 +39,9 @@
     {
       "asDropdown": true,
       "icon": "external link",
-      "tags": ["tesla"],
+      "tags": [
+        "tesla"
+      ],
       "title": "Dashboards",
       "type": "dashboards"
     }
@@ -2622,7 +2625,7 @@
     }
   ],
   "preload": false,
-  "schemaVersion": 40,
+  "schemaVersion": 41,
   "tags": [],
   "templating": {
     "list": [
@@ -2644,7 +2647,10 @@
         "type": "textbox"
       },
       {
-        "current": {},
+        "current": {
+          "text": "C",
+          "value": "C"
+        },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "TeslaMate"
@@ -2660,7 +2666,10 @@
         "type": "query"
       },
       {
-        "current": {},
+        "current": {
+          "text": "km",
+          "value": "km"
+        },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "TeslaMate"
@@ -2676,7 +2685,10 @@
         "type": "query"
       },
       {
-        "current": {},
+        "current": {
+          "text": "Model Y",
+          "value": "1"
+        },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "TeslaMate"
@@ -2692,7 +2704,10 @@
         "type": "query"
       },
       {
-        "current": {},
+        "current": {
+          "text": "m",
+          "value": "m"
+        },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "TeslaMate"
@@ -2708,7 +2723,10 @@
         "type": "query"
       },
       {
-        "current": {},
+        "current": {
+          "text": "rated",
+          "value": "rated"
+        },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "TeslaMate"
@@ -2740,7 +2758,10 @@
         "type": "query"
       },
       {
-        "current": {},
+        "current": {
+          "text": "bar",
+          "value": "bar"
+        },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "TeslaMate"
@@ -2756,7 +2777,10 @@
         "type": "query"
       },
       {
-        "current": {},
+        "current": {
+          "text": "km/h",
+          "value": "km/h"
+        },
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "TeslaMate"
@@ -2783,6 +2807,5 @@
   "timezone": "",
   "title": "Drive Details",
   "uid": "zm7wN6Zgz",
-  "version": 1,
-  "weekStart": ""
+  "version": 9
 }
