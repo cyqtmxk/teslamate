@@ -16,7 +16,7 @@ COPY requirements.txt /app/requirements.txt
 RUN pip install --upgrade wheel setuptools pip
 
 # 安装依赖库
-RUN pip install --no-cache-dir --use-deprecated-legacy  -r requirements.txt 
+RUN pip install --no-cache-dir --use-deprecated=legacy-resolver  -r requirements.txt 
 
 # 将当前目录的文件复制到容器内
 COPY . /app
