@@ -102,7 +102,7 @@ jobs:
   wechat_teslamate:
     needs: check_paths
     if: needs.check_paths.outputs.githubfolder != 'true' || github.event_name == 'schedule'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - name: Checkout
