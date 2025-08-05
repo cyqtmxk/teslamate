@@ -1,4 +1,4 @@
-.PHONY: help vsn grafana teslamate
+.PHONY: help vsn grafana wechat_teslamate teslamate
 
 APP_NAME ?= `grep 'app:' mix.exs | sed -e 's/\[//g' -e 's/ //g' -e 's/app://' -e 's/[:,]//g'`
 APP_VSN ?= `cat VERSION`
@@ -18,5 +18,5 @@ teslamate: vsn ## Build teslamate Docker image
 grafana: vsn ## Build  teslamate-grafana Docker image
 	@cd grafana && docker build --pull -t teslamate-grafana .
 
-wechat_teslamate: vsn ## Build  teslamate-grafana Docker image
+wechat_teslamate: vsn ## Build  teslamate-wechat Docker image
 	@cd wechat_teslamate && docker build --pull -t teslamate-wechat .
