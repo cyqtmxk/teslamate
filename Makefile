@@ -17,3 +17,6 @@ teslamate: vsn ## Build teslamate Docker image
 
 grafana: vsn ## Build  teslamate-grafana Docker image
 	@cd grafana && docker build --pull -t teslamate-grafana .
+
+wechat_teslamate: vsn ## Build  teslamate-grafana Docker image
+	@cd wechat_teslamate && docker build --pull -t teslamate-wechat .
