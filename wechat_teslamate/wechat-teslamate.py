@@ -3025,8 +3025,8 @@ def send_email(subject, message, to_email):
     msg.attach(MIMEText(message, 'plain'))
 
     # 设置SMTP服务器地址及端口
-    server = smtplib.SMTP('smtp.qq.com', 587)  # 使用示例SMTP服务器地址和端口
-    server.starttls()  # 启用安全传输
+    server = smtplib.SMTP_SSL('smtp.qq.com', 465)  # 使用示例SMTP服务器地址和端口
+#    server.starttls()  # 启用安全传输
     server.login(sender_email, password)  # 登录邮箱
     text = msg.as_string()  # 获取msg对象的文本表示
     server.sendmail(sender_email, to_email, text)  # 发送邮件
@@ -3139,8 +3139,8 @@ def send_email2(subject, message, to_email):
     msg.attach(MIMEText(html_content, 'html'))  # 使用 'html' 而不是 'plain'
 
     # 设置 SMTP 服务器地址及端口
-    server = smtplib.SMTP('smtp.qq.com', 587)  # 使用示例 SMTP 服务器地址和端口
-    server.starttls()  # 启用安全传输
+    server = smtplib.SMTP_SSL('smtp.qq.com', 465)  # 使用示例 SMTP 服务器地址和端口
+#    server.starttls()  # 启用安全传输
     server.login(sender_email, password)  # 登录邮箱
     text = msg.as_string()  # 获取 msg 对象的文本表示
     server.sendmail(sender_email, to_email, text)  # 发送邮件
@@ -3224,8 +3224,8 @@ def send_email3(subject, trip_message, message, to_email):
     msg.attach(MIMEText(html_content, 'html'))  # 使用 'html' 而不是 'plain'
 
     # 设置 SMTP 服务器地址及端口
-    server = smtplib.SMTP('smtp.qq.com', 587)  # 使用示例 SMTP 服务器地址和端口
-    server.starttls()  # 启用安全传输
+    server = smtplib.SMTP_SSL('smtp.qq.com', 465)  # 使用示例 SMTP 服务器地址和端口
+#    server.starttls()  # 启用安全传输
     server.login(sender_email, password)  # 登录邮箱
     text = msg.as_string()  # 获取 msg 对象的文本表示
     server.sendmail(sender_email, to_email, text)  # 发送邮件
