@@ -1,5 +1,5 @@
 # 使用 Python 轻量镜像
-FROM python:3.9-slim
+FROM python:3.14-slim
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
