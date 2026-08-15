@@ -18,8 +18,6 @@ permissions:
 jobs:
   check_paths:
     uses: ./.github/workflows/check_paths.yml
-    with:
-      base_branch: main
 
   build:
     name: Build ${{ matrix.platform }}
