@@ -9,7 +9,7 @@ defmodule TeslaMate.Log do
   import Ecto.Query, warn: false
 
   alias __MODULE__.{Car, Drive, Update, ChargingProcess, Charge, Position, State}
-  alias TeslaMate.{Repo, Locations, Settings}
+  alias TeslaMate.{Repo, Locations, Settings, Weather}
   alias TeslaMate.Locations.GeoFence
   alias TeslaMate.Settings.{CarSettings, GlobalSettings}
 
@@ -322,6 +322,9 @@ defmodule TeslaMate.Log do
           |> put_geofence(:start_geofence_id, start_pos)
           |> put_geofence(:end_geofence_id, end_pos)
 
+        # Fetch weather based on end_position coordinates
+        attrs = put_weather(attrs, end_pos)
+
         drive
         |> Drive.changeset(attrs)
         |> Repo.update()
@@ -348,6 +351,30 @@ defmodule TeslaMate.Log do
     case Locations.find_geofence(position) do
       %GeoFence{id: id} -> Map.put(attrs, key, id)
       nil -> attrs
+    end
+  end
+
+  defp put_weather(attrs, position) do
+    case position do
+      %Position{latitude: lat, longitude: lon} when not is_nil(lat) and not is_nil(lon) ->
+        lat_float = Decimal.to_float(lat)
+        lon_float = Decimal.to_float(lon)
+
+        case Weather.get_current_weather(lat_float, lon_float) do
+          {:ok, weather_desc} ->
+            Map.put(attrs, :weather, weather_desc)
+
+          {:error, :api_key_not_configured} ->
+            Logger.info("OpenWeather API key not configured, skipping weather fetch")
+            attrs
+
+          {:error, reason} ->
+            Logger.warning("Failed to fetch weather: #{inspect(reason)}")
+            attrs
+        end
+
+      _ ->
+        attrs
     end
   end
 
@@ -460,6 +487,9 @@ defmodule TeslaMate.Log do
         end
       end)
       |> put_cost(charging_process)
+
+    # Fetch weather based on charging process position coordinates
+    attrs = put_weather(attrs, charging_process.position)
 
     with {:ok, cproc} <- charging_process |> ChargingProcess.changeset(attrs) |> Repo.update(),
          {:ok, _car} <- recalculate_efficiency(charging_process.car, settings) do

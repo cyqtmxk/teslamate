@@ -1,0 +1,167 @@
+name: Build and Push Docker Images
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags:
+      - "v*"
+
+env:
+  # 你的 Docker Hub 镜像前缀，如：yourname/teslamate
+  REGISTRY_IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/teslamate
+  # GHCR 镜像（用于缓存）
+  GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/teslamate
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  check_paths:
+    uses: ./.github/workflows/check_paths.yml
+    with:
+      base_branch: main
+
+  build:
+    name: Build ${{ matrix.platform }}
+    needs: check_paths
+    if: needs.check_paths.outputs.githubfolder != 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "linux/amd64"
+            runs_on: "ubuntu-24.04"
+            cache_key: amd64
+          - platform: "linux/arm/v7"
+            runs_on: "ubuntu-24.04"
+            cache_key: arm
+          - platform: "linux/arm64"
+            runs_on: "ubuntu-24.04"
+            cache_key: arm64
+    runs-on: ${{ matrix.runs_on }}
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to GHCR (for cache)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=edge,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ github.ref_name }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.cache_key }}
+          cache-to: type=gha,scope=${{ matrix.cache_key }},mode=max
+          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true
+
+  build-grafana:
+    name: Build Grafana
+    needs: check_paths
+    if: needs.check_paths.outputs.githubfolder != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ vars.DOCKERHUB_USERNAME }}/teslamate-grafana
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=edge,enable={{is_default_branch}}
+      - name: Build and push Grafana
+        uses: docker/build-push-action@v6
+        with:
+          context: grafana
+          platforms: linux/amd64,linux/arm/v7,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-wechat:
+    name: Build Wechat_Teslamate
+    needs: check_paths
+    if: needs.check_paths.outputs.githubfolder != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ vars.DOCKERHUB_USERNAME }}/wechat-teslamate
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=edge,enable={{is_default_branch}}
+      - name: Build and push Wechat
+        uses: docker/build-push-action@v6
+        with:
+          context: wechat_teslamate
+          platforms: linux/amd64,linux/arm/v7,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
