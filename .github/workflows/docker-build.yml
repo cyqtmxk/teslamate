@@ -3,14 +3,12 @@ name: Build and Push Docker Images
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, feature/teslamate_weather]
     tags:
       - "v*"
 
 env:
-  # 你的 Docker Hub 镜像前缀，如：yourname/teslamate
   REGISTRY_IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/teslamate
-  # GHCR 镜像（用于缓存）
   GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/teslamate
 
 permissions:
