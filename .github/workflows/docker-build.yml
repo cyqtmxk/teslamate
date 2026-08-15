@@ -34,7 +34,7 @@ jobs:
             runs_on: "ubuntu-24.04"
             cache_key: arm
           - platform: "linux/arm64"
-            runs_on: "ubuntu-24.04"
+            runs_on: "buildjet-2vcpu-ubuntu-2204-arm"
             cache_key: arm64
     runs-on: ${{ matrix.runs_on }}
     timeout-minutes: 60
