@@ -12,22 +12,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# 先装最慢的几个包（固定版本，优先用 wheel）
+# 先装最慢的几个包（固定版本，优先用 wheel，去重 urllib3）
 COPY requirements.txt .
 RUN pip install --no-cache-dir --prefer-binary \
     numpy==1.24.3 \
     psycopg2-binary==2.9.9 \
     asyncpg==0.29.0 \
     paho-mqtt==1.6.1 \
-    urllib3==2.0.7 \
+    urllib3==1.26.18 \
     certifi==2024.2.2 \
     charset-normalizer==3.3.2 \
     idna==3.6 \
     requests==2.31.0 \
     pytz==2024.1 \
     schedule==1.2.0 \
-    PyJWT==2.8.0 \
-    urllib3==1.26.18
+    PyJWT==2.8.0
 
 # 再装剩余 requirements（复用上层缓存）
 RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
