@@ -1,28 +1,41 @@
-# 使用 Python 轻量镜像
-FROM python:3.9-slim
+# syntax = docker/dockerfile:1.4
+FROM python:3.11-slim AS builder
 
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+# 安装编译依赖
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    g++ \
+    libpq-dev \
+    libffi-dev \
+    libssl-dev \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update \
-    && apt-get install -y build-essential python3-dev postgresql postgresql-contrib libpq-dev
+# 先装最慢的几个包（固定版本，优先用 wheel）
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefer-binary \
+    numpy==1.24.3 \
+    psycopg2-binary==2.9.9 \
+    asyncpg==0.29.0 \
+    paho-mqtt==1.6.1 \
+    urllib3==2.0.7 \
+    certifi==2024.2.2 \
+    charset-normalizer==3.3.2 \
+    idna==3.6 \
+    requests==2.31.0 \
+    pytz==2024.1 \
+    schedule==1.2.0 \
+    PyJWT==2.8.0 \
+    urllib3==1.26.18
 
-# 设置容器内的工作目录
+# 再装剩余 requirements（复用上层缓存）
+RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
+
+# 运行时镜像（多阶段构建，极小）
+FROM python:3.11-slim
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 WORKDIR /app
-
-# 将 requirements.txt 复制到容器内
-COPY requirements.txt /app/requirements.txt
-
-# 安装 pip 等的最新版本
-RUN pip install --upgrade wheel setuptools pip
-
-# 安装依赖库
-RUN pip install --no-cache-dir --use-deprecated=legacy-resolver  -r requirements.txt 
-
-# 将当前目录的文件复制到容器内
-COPY . /app
-
-# 暴露 HTTP 服务端口
-EXPOSE 7777
-
-# 运行脚本
-CMD ["python", "wechat-teslamate.py"]
+COPY . .
+CMD ["python", "wechat_teslamate.py"]
