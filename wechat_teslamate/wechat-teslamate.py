@@ -1,4 +1,4 @@
-version = "V2.2 2025/3/25"
+version = "V2.3 2025/8/27"
 import re
 import os
 import shutil
@@ -296,7 +296,7 @@ async def listen_for_updates():
         global newdata 
         print(f"收到通知: 通道={channel}, 消息={payload}, 由进程 {pid} 发送")
         newdata = str(channel)
-        message_queue.put(("teslamate/cars/1/manual", 1))
+        message_queue.put((f"teslamate/cars/{CAR_NUM}/manual", 1))
     try:
         print("尝试连接到数据库...")
         conn = await asyncpg.connect(
@@ -329,80 +329,6 @@ def start_listening():
 
 threading.Thread(target=initialize_db_pool).start()
 threading.Thread(target=start_listening).start()
-
-
-def get_manifest():
-    # 镜像地址及镜像名称、tag
-    registry = 'crpi-imfm7cwd6erou87s.cn-hangzhou.personal.cr.aliyuncs.com'
-    repository = 'ciyahu/can'
-    tag = 'wechat-teslamate-latest'
-    
-    # 构造请求 URL，确保使用 HTTPS 协议
-    url = f'https://{registry}/v2/{repository}/manifests/{tag}'
-    
-    # 设置请求头，指定接受的 manifest 版本
-    headers = {
-        'Accept': 'application/vnd.docker.distribution.manifest.v2+json'
-    }
-    
-    # 第一次请求 manifest
-    response = requests.get(url, headers=headers)
-    
-    if response.status_code == 200:
-        return response.json()
-    
-    # 如果返回 401，则需要获取 token 后重试请求
-    elif response.status_code == 401:
-        # 获取 WWW-Authenticate 响应头
-        auth_header = response.headers.get('WWW-Authenticate', '')
-        if not auth_header:
-            print("没有找到WWW-Authenticate头，无法进行认证")
-            return None
-        
-        # 解析 auth_header，例如：
-        # Bearer realm="https://auth.example.com/token",service="registry.example.com",scope="repository:ciyahu/can:pull"
-        match = re.match(
-            r'Bearer\s+realm="(?P<realm>[^"]+)",\s*service="(?P<service>[^"]+)"(?:,\s*scope="(?P<scope>[^"]+)")?',
-            auth_header
-        )
-        if not match:
-            print("无法解析WWW-Authenticate头:", auth_header)
-            return None
-        
-        token_info = match.groupdict()
-        realm = token_info.get('realm')
-        service = token_info.get('service')
-        scope = token_info.get('scope')
-        
-        # 组装请求 token 的参数
-        token_params = {'service': service}
-        if scope:
-            token_params['scope'] = scope
-        
-        # 请求 token
-        token_response = requests.get(realm, params=token_params)
-        if token_response.status_code != 200:
-            print(f"获取token失败: {token_response.status_code} - {token_response.text}")
-            return None
-        
-        token_json = token_response.json()
-        token = token_json.get('token') or token_json.get('access_token')
-        if not token:
-            print("未能在token响应中找到token字段")
-            return None
-        
-        # 带上token重新请求manifest
-        headers['Authorization'] = f"Bearer {token}"
-        token_retry_response = requests.get(url, headers=headers)
-        if token_retry_response.status_code == 200:
-            return token_retry_response.json()
-        else:
-            print(f"认证后请求失败: {token_retry_response.status_code} - {token_retry_response.text}")
-            return None
-    else:
-        print(f"请求失败: {response.status_code} - {response.text}")
-        return None
-
 
 
 def haversine_distance(lat1, lng1, lat2, lng2):
@@ -453,7 +379,7 @@ def fetch_path(start_time, end_time):
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=extras.RealDictCursor)
 
-        # 根据时间区间查询 positions 表，假设 car_id = 1
+        # 根据时间区间查询 positions 表，假设 car_id = {CAR_NUM}
         position_query = f"""
             SELECT
                 date AS "time",
@@ -461,7 +387,7 @@ def fetch_path(start_time, end_time):
                 longitude
             FROM positions
             WHERE 
-                car_id = 1
+                car_id = {CAR_NUM}
                 AND date >= '{start_time_dt.isoformat()}'
                 AND date <= '{end_time_dt.isoformat()}'
             ORDER BY date ASC;
@@ -631,7 +557,7 @@ def fetch_path24(start_time, end_time):
             query = f"""
                 SELECT date AS "time", latitude, longitude
                 FROM positions
-                WHERE car_id = 1
+                WHERE car_id = {CAR_NUM}
                   AND date >= '{new_start.isoformat()}'
                   AND date <= '{end_time_dt.isoformat()}'
                 ORDER BY date ASC
@@ -742,7 +668,7 @@ def fetch_path24(start_time, end_time):
             query = f"""
                 SELECT date AS "time", latitude, longitude
                 FROM positions
-                WHERE car_id = 1
+                WHERE car_id = {CAR_NUM}
                   AND date > '{first_time.isoformat()}'
                   AND date < '{second_time.isoformat()}'
                 ORDER BY date ASC;
@@ -963,12 +889,7 @@ def update_navigation_path(current_lat, current_lng, path_list, threshold=10, st
 
 def fetch_drive_data(num_rows=1):
     global efficiency
-
-
-    # 调用函数并输出结果
-    manifest = get_manifest()
-    # print(manifest)
-
+	
     # 确保参数在合理范围内
     num_rows = max(1, min(num_rows, 50))  # 限制 num_rows 在 1-50 之间
 
@@ -1051,7 +972,7 @@ def fetch_drive_data(num_rows=1):
             car_id
         FROM positions
         WHERE 
-            car_id = 1 AND 
+            car_id = {CAR_NUM} AND 
             ({where_clause})
         ORDER BY 
             date ASC;
@@ -1580,7 +1501,7 @@ def fetch_trip_stats(days):
                     longitude
                 FROM positions
                 WHERE 
-                    car_id = 1
+                    car_id = {CAR_NUM}
                     AND date >= '{utc_start_time.isoformat()}'
                     AND date <= '{utc_end_time.isoformat()}'
                 ORDER BY date ASC;
@@ -1598,18 +1519,10 @@ def fetch_trip_stats(days):
                 path.append({"lat": lat, "lng": lon, "timestamp": timestamp})
 
             # 根据日报、周报、月报设置不同的过滤参数
-            if days == 1:  # 日报
-                CURVATURE_THRESHOLD = 10  # 曲率 10 度
-                distance_threshold = 1.0  # 距离 1 米
-                TIME_THRESHOLD = 5        # 时间 5 秒
-            elif days == 7:  # 周报
-                CURVATURE_THRESHOLD = 30  # 曲率 30 度
-                distance_threshold = 5.0  # 距离 5 米
-                TIME_THRESHOLD = 60       # 时间 1 分钟
-            elif days == 30:  # 月报
-                CURVATURE_THRESHOLD = 60  # 曲率 60 度
-                distance_threshold = 10.0 # 距离 10 米
-                TIME_THRESHOLD = 600      # 时间 10 分钟
+            # 统一使用与日报一致的过滤阈值，保证轨迹完整和平滑
+            CURVATURE_THRESHOLD = 10  # 曲率 10 度（保留转弯）
+            distance_threshold = 1.0  # 距离 1 米（去重/抖动）
+            TIME_THRESHOLD = 5        # 时间 5 秒（保证直线段也留点）
 
             # 第一步：曲率过滤
             curvature_filtered_path = []
@@ -1959,7 +1872,7 @@ def fetch_charge_data(num_rows=1):
 BUTTON_COUNT = 13  # 按钮数量
 NUM_COUNT = 5
 HOST = "0.0.0.0"
-PORT = 7777
+PORT = 7778
 
 # 默认值
 DEFAULT_VALUES = {
@@ -2100,7 +2013,7 @@ class ButtonHandler(SimpleHTTPRequestHandler):
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.end_headers()
 
-            message_queue.put(("teslamate/cars/1/manual", 1))
+            message_queue.put((f"teslamate/cars/{CAR_NUM}/manual", 1))
 
             # 处理车辆状态相关数据
             adjusted_heading = 360 - heading_angle if heading_angle is not None else 0
@@ -2525,32 +2438,32 @@ class ButtonHandler(SimpleHTTPRequestHandler):
                 result = "操作 1 已成功完成"
                 print(f"Custom action executed: {result}")
                 newdata = "drive_update"
-                message_queue.put(("teslamate/cars/1/manual", 1))
+                message_queue.put((f"teslamate/cars/{CAR_NUM}/manual", 1))
             elif action_id == 2:
                 result = "操作 2 已成功完成"
                 print(f"Custom action executed: {result}")
                 newdata = "charging_update"
-                message_queue.put(("teslamate/cars/1/manual", 1))
+                message_queue.put((f"teslamate/cars/{CAR_NUM}/manual", 1))
             elif action_id == 3:
                 result = "操作 3 已成功完成"
                 print(f"Custom action executed: {result}")
                 newdata = "state"
-                message_queue.put(("teslamate/cars/1/manual", 1))
+                message_queue.put((f"teslamate/cars/{CAR_NUM}/manual", 1))
             elif action_id == 5:
                 result = "操作 5 已成功完成"
                 print(f"Custom action executed: {result}")
                 newdata = "day"
-                message_queue.put(("teslamate/cars/1/manual", 1))
+                message_queue.put((f"teslamate/cars/{CAR_NUM}/manual", 1))
             elif action_id == 6:
                 result = "操作 6 已成功完成"
                 print(f"Custom action executed: {result}")
                 newdata = "week"
-                message_queue.put(("teslamate/cars/1/manual", 1))
+                message_queue.put((f"teslamate/cars/{CAR_NUM}/manual", 1))
             elif action_id == 7:
                 result = "操作 7 已成功完成"
                 print(f"Custom action executed: {result}")
                 newdata = "month"
-                message_queue.put(("teslamate/cars/1/manual", 1))
+                message_queue.put((f"teslamate/cars/{CAR_NUM}/manual", 1))
             else:
                 result = "未知的操作 ID"
                 print(f"Unknown custom action ID: {action_id}")
@@ -2703,15 +2616,15 @@ def periodic_task():
         if action_id == 1:
             print("执行日报推送逻辑: 1")
             newdata = "day"
-            message_queue.put(("teslamate/cars/1/day", 1))
+            message_queue.put((f"teslamate/cars/{CAR_NUM}/day", 1))
         elif action_id == 2:
             print("执行周报推送逻辑: 2")
             newdata = "week"
-            message_queue.put(("teslamate/cars/1/week", 1))
+            message_queue.put((f"teslamate/cars/{CAR_NUM}/week", 1))
         elif action_id == 3:
             print("执行月报推送逻辑: 3")
             newdata = "month"
-            message_queue.put(("teslamate/cars/1/month", 1))
+            message_queue.put((f"teslamate/cars/{CAR_NUM}/month", 1))
 
     def check_and_push_daily():
         states = read_env_states()
@@ -2833,7 +2746,7 @@ def periodic_task():
             if current_time >= next_run_1:
                 nouvelleinformation = True
                 tittle = "⏰定时推送"
-                message_queue.put(("teslamate/cars/1/manual", 1))
+                message_queue.put((f"teslamate/cars/{CAR_NUM}/manual", 1))
                 next_run_1 = current_time + interval_1 * 60
         else:
             last_interval_1 = None
@@ -2848,7 +2761,7 @@ def periodic_task():
                 if charging_state_flag == "1":
                     nouvelleinformation = True
                     tittle = "⏰充电中定时推送"
-                    message_queue.put(("teslamate/cars/1/manual", 1))
+                    message_queue.put((f"teslamate/cars/{CAR_NUM}/manual", 1))
                 next_run_2 = current_time + interval_2 * 60
         else:
             last_interval_2 = None
@@ -3025,8 +2938,8 @@ def send_email(subject, message, to_email):
     msg.attach(MIMEText(message, 'plain'))
 
     # 设置SMTP服务器地址及端口
-    server = smtplib.SMTP_SSL('smtp.qq.com', 465)  # 使用示例SMTP服务器地址和端口
-#    server.starttls()  # 启用安全传输
+    server = smtplib.SMTP('smtp.qq.com', 587)  # 使用示例SMTP服务器地址和端口
+    server.starttls()  # 启用安全传输
     server.login(sender_email, password)  # 登录邮箱
     text = msg.as_string()  # 获取msg对象的文本表示
     server.sendmail(sender_email, to_email, text)  # 发送邮件
@@ -3139,8 +3052,8 @@ def send_email2(subject, message, to_email):
     msg.attach(MIMEText(html_content, 'html'))  # 使用 'html' 而不是 'plain'
 
     # 设置 SMTP 服务器地址及端口
-    server = smtplib.SMTP_SSL('smtp.qq.com', 465)  # 使用示例 SMTP 服务器地址和端口
-#    server.starttls()  # 启用安全传输
+    server = smtplib.SMTP('smtp.qq.com', 587)  # 使用示例 SMTP 服务器地址和端口
+    server.starttls()  # 启用安全传输
     server.login(sender_email, password)  # 登录邮箱
     text = msg.as_string()  # 获取 msg 对象的文本表示
     server.sendmail(sender_email, to_email, text)  # 发送邮件
@@ -3224,8 +3137,8 @@ def send_email3(subject, trip_message, message, to_email):
     msg.attach(MIMEText(html_content, 'html'))  # 使用 'html' 而不是 'plain'
 
     # 设置 SMTP 服务器地址及端口
-    server = smtplib.SMTP_SSL('smtp.qq.com', 465)  # 使用示例 SMTP 服务器地址和端口
-#    server.starttls()  # 启用安全传输
+    server = smtplib.SMTP('smtp.qq.com', 587)  # 使用示例 SMTP 服务器地址和端口
+    server.starttls()  # 启用安全传输
     server.login(sender_email, password)  # 登录邮箱
     text = msg.as_string()  # 获取 msg 对象的文本表示
     server.sendmail(sender_email, to_email, text)  # 发送邮件
@@ -3253,7 +3166,10 @@ def on_message(client, userdata, msg):
         print(f"消息处理失败：{e}")
 
 
-def get_battery_health(car_id=1):
+def get_battery_health(car_id=None):
+    global CAR_NUM, efficiency
+    if car_id is None:
+       car_id = CAR_NUM
     global bet1, bet2, bet3, bet4, bet5, efficiency, current_range
     global conn_charge_cable_value, battery_heater_value  # 新增全局变量
     conn = get_connection()
@@ -3540,26 +3456,26 @@ def process_message_queue():
 			beijing_timezone = pytz.timezone('Asia/Shanghai')  # 获取当前北京时间
 			now = datetime.now(beijing_timezone)
 			today = now.strftime("%y/%m/%d %H:%M:%S")  # 格式化日期时间
-			topic_suffix = topic.replace("teslamate/cars/1/", "").ljust(29)
+			topic_suffix = topic.replace(f"teslamate/cars/{CAR_NUM}/", "").ljust(29)
 			# print(str(today) + " 处理————" + str(topic_suffix) + " : " + str(payload))
 			formatted_message = str(today) + " " + str(topic_suffix) + " : " + str(payload)
 			# print(formatted_message)
 
 			
 
-			if topic == "teslamate/cars/1/display_name": 
+			if topic == f"teslamate/cars/{CAR_NUM}/display_name": 
 				pseudo = "🚗 "+str(payload)  
 				get_battery_health()               # do we change name often ?
 			# if tittle == "": tittle = pseudo
-			if topic == "teslamate/cars/1/model": model = "Model "+str(payload)                       # Model is very static...
-			if topic == "teslamate/cars/1/update_version": update_version = str(payload)
-			if topic == "teslamate/cars/1/odometer": 
+			if topic == f"teslamate/cars/{CAR_NUM}/model": model = "Model "+str(payload)                       # Model is very static...
+			if topic == f"teslamate/cars/{CAR_NUM}/update_version": update_version = str(payload)
+			if topic == f"teslamate/cars/{CAR_NUM}/odometer": 
 				km = str(payload)   
 				trip = float(payload)
 				# print(trip)                             # Car is moving, don't bother the driver
-			if topic == "teslamate/cars/1/latitude": latitude = float(payload)                          # Car is moving, don't bother the driver
-			if topic == "teslamate/cars/1/longitude": longitude = float(payload)                        # Car is moving, don't bother the driver
-			if topic == "teslamate/cars/1/usable_battery_level":  # Car is moving, don't bother the driver
+			if topic == f"teslamate/cars/{CAR_NUM}/latitude": latitude = float(payload)                          # Car is moving, don't bother the driver
+			if topic == f"teslamate/cars/{CAR_NUM}/longitude": longitude = float(payload)                        # Car is moving, don't bother the driver
+			if topic == f"teslamate/cars/{CAR_NUM}/usable_battery_level":  # Car is moving, don't bother the driver
 				usable_battery_level = float(payload)  # 更新电池电量
 				# 检测电量从30%及以上变为30%以下
 				if previous_battery_level >= 30 and usable_battery_level < 30:
@@ -3574,10 +3490,10 @@ def process_message_queue():
 
 			
 			
-			if topic == "teslamate/cars/1/ideal_battery_range_km": distance = float(payload)             # estimated range
+			if topic == f"teslamate/cars/{CAR_NUM}/ideal_battery_range_km": distance = float(payload)             # estimated range
 			
-			if topic == "teslamate/cars/1/rated_battery_range_km": rated = float(payload)
-			if topic == "teslamate/cars/1/active_route": 
+			if topic == f"teslamate/cars/{CAR_NUM}/rated_battery_range_km": rated = float(payload)
+			if topic == f"teslamate/cars/{CAR_NUM}/active_route": 
 				route = json.loads(payload)
 				lat2 = route["location"]["latitude"] if "location" in route and "latitude" in route["location"] else None
 				lon2 = route["location"]["longitude"] if "location" in route and "longitude" in route["location"] else None
@@ -3587,33 +3503,33 @@ def process_message_queue():
 					msg4 = None
 				destination = route["destination"] if "destination" in route and route["destination"] is not None else "None"
 				# print(f"Destination: {destination}, {msg4 if msg4 is not None else 'None'}")
-			if topic == "teslamate/cars/1/tpms_soft_warning_fl":
+			if topic == f"teslamate/cars/{CAR_NUM}/tpms_soft_warning_fl":
 				tpms_soft_warning_fl = str(payload)  # True/False
-			if topic == "teslamate/cars/1/tpms_soft_warning_fr":
+			if topic == f"teslamate/cars/{CAR_NUM}/tpms_soft_warning_fr":
 				tpms_soft_warning_fr = str(payload)  # True/False
-			if topic == "teslamate/cars/1/tpms_soft_warning_rl":
+			if topic == f"teslamate/cars/{CAR_NUM}/tpms_soft_warning_rl":
 				tpms_soft_warning_rl = str(payload)  # True/False
-			if topic == "teslamate/cars/1/tpms_soft_warning_rr":
+			if topic == f"teslamate/cars/{CAR_NUM}/tpms_soft_warning_rr":
 				tpms_soft_warning_rr = str(payload)  # True/False
-			if topic == "teslamate/cars/1/tpms_pressure_fl": 
+			if topic == f"teslamate/cars/{CAR_NUM}/tpms_pressure_fl": 
 				tpms_pressure_fl = str(payload)  # 解码消息
 				if len(tpms_pressure_fl) == 3:  # 判断是否只有3位
 					tpms_pressure_fl += "0"  # 补充一个0
 				elif len(tpms_pressure_fl) > 4:  # 如果超过4位，截取前4位
 					tpms_pressure_fl = tpms_pressure_fl[:4]
-			if topic == "teslamate/cars/1/tpms_pressure_fr":	
+			if topic == f"teslamate/cars/{CAR_NUM}/tpms_pressure_fr":	
 				tpms_pressure_fr = str(payload)  # 解码消息
 				if len(tpms_pressure_fr) == 3:  # 判断是否只有3位
 					tpms_pressure_fr += "0"  # 补充一个0
 				elif len(tpms_pressure_fr) > 4:  # 如果超过4位，截取前4位
 					tpms_pressure_fr = tpms_pressure_fr[:4]
-			if topic == "teslamate/cars/1/tpms_pressure_rl": 
+			if topic == f"teslamate/cars/{CAR_NUM}/tpms_pressure_rl": 
 				tpms_pressure_rl = str(payload)
 				if len(tpms_pressure_rl) == 3:  # 判断是否只有3位
 					tpms_pressure_rl += "0"  # 补充一个0
 				elif len(tpms_pressure_rl) > 4:  # 如果超过4位，截取前4位
 					tpms_pressure_rl = tpms_pressure_rl[:4]
-			if topic == "teslamate/cars/1/tpms_pressure_rr": 
+			if topic == f"teslamate/cars/{CAR_NUM}/tpms_pressure_rr": 
 				tpms_pressure_rr = str(payload)
 				if len(tpms_pressure_rr) == 3:  # 判断是否只有3位
 					tpms_pressure_rr += "0"  # 补充一个0
@@ -3675,19 +3591,19 @@ def process_message_queue():
 
 
 
-			if topic == "teslamate/cars/1/outside_temp": outside_temp	= str(payload)	         # 车外温度
-			if topic == "teslamate/cars/1/inside_temp": inside_temp =	str(payload)	# 车内温度
-			if topic == "teslamate/cars/1/version": carversion =	str(payload)	# 系统版本
-			if topic == "teslamate/cars/1/charger_voltage": charger_voltage =	str(payload)   # 充电电压
-			if topic == "teslamate/cars/1/charger_power":
+			if topic == f"teslamate/cars/{CAR_NUM}/outside_temp": outside_temp	= str(payload)	         # 车外温度
+			if topic == f"teslamate/cars/{CAR_NUM}/inside_temp": inside_temp =	str(payload)	# 车内温度
+			if topic == f"teslamate/cars/{CAR_NUM}/version": carversion =	str(payload)	# 系统版本
+			if topic == f"teslamate/cars/{CAR_NUM}/charger_voltage": charger_voltage =	str(payload)   # 充电电压
+			if topic == f"teslamate/cars/{CAR_NUM}/charger_power":
 				current_power = float(payload)
 				if current_power > max_charger_power:
 					max_charger_power = current_power
-			if topic == "teslamate/cars/1/charge_limit_soc": charge_limit_soc =	str(payload)   # 充电限制
-			if topic == "teslamate/cars/1/time_to_full_charge": time_to_full_charge =	float(payload)   # 达限时间
-			if topic == "teslamate/cars/1/is_user_present": present =	str(payload)   # 乘客
+			if topic == f"teslamate/cars/{CAR_NUM}/charge_limit_soc": charge_limit_soc =	str(payload)   # 充电限制
+			if topic == f"teslamate/cars/{CAR_NUM}/time_to_full_charge": time_to_full_charge =	float(payload)   # 达限时间
+			if topic == f"teslamate/cars/{CAR_NUM}/is_user_present": present =	str(payload)   # 乘客
 
-			if topic == "teslamate/cars/1/charging_state":              # interesting info but at initial startup it gives 1 message for state and 1 message for lock
+			if topic == f"teslamate/cars/{CAR_NUM}/charging_state":              # interesting info but at initial startup it gives 1 message for state and 1 message for lock
 				if str(payload) == "Charging":
 					if charging_state_flag != "1":
 						charging_state_flag = "1"
@@ -3699,7 +3615,7 @@ def process_message_queue():
 						start_charge_energy_added = charge_energy_added  # 记录开始充电时已充入的电量
 						max_charger_power = 0.0  # 重置最大功率
 
-				elif topic == "teslamate/cars/1/charging_state" and str(payload) in ["Disconnected", "Stopped"]:
+				elif topic == f"teslamate/cars/{CAR_NUM}/charging_state" and str(payload) in ["Disconnected", "Stopped"]:
 					if charging_state_flag == "1":
 						charging_state_flag = "0"
 						get_battery_health()
@@ -3731,30 +3647,30 @@ def process_message_queue():
 							max_charger_power = 0.0
 						
 
-			if topic == "teslamate/cars/1/time_to_full_charge": 
+			if topic == f"teslamate/cars/{CAR_NUM}/time_to_full_charge": 
 				temps_restant_mqtt = float(payload)		
-			if topic == "teslamate/cars/1/charge_energy_added":                                                # Collect infos but don't send a message NOW
+			if topic == f"teslamate/cars/{CAR_NUM}/charge_energy_added":                                                # Collect infos but don't send a message NOW
 				charge_energy_added = float(payload)
 
 			# Please send me a message :
 			# --------------------------
-			if topic == "teslamate/cars/1/is_preconditioning":
+			if topic == f"teslamate/cars/{CAR_NUM}/is_preconditioning":
 				if str(payload) == "true": 
 					nouvelleinformation = True
 					tittle = "♨️开始温度调节"
 
-			if topic == "teslamate/cars/1/heading":
+			if topic == f"teslamate/cars/{CAR_NUM}/heading":
 				heading_angle = float(payload)  # 提取车头角度
 
 					
 			# 记录行程开始的时间、电池百分比、续航里程
-			if topic == "teslamate/cars/1/is_user_present" and str(payload) == "true":
+			if topic == f"teslamate/cars/{CAR_NUM}/is_user_present" and str(payload) == "true":
 				if not trip_started: trip_started = True  # 设置标志，表示行程已开始
-			if topic == "teslamate/cars/1/is_user_present" and str(payload) == "false":
+			if topic == f"teslamate/cars/{CAR_NUM}/is_user_present" and str(payload) == "false":
 				trip_started = False  # 重置标志，表示行程未开始
 
 			# 更新行驶过程中的最高车速
-			if topic == "teslamate/cars/1/speed":
+			if topic == f"teslamate/cars/{CAR_NUM}/speed":
 				try:
 					current_time = time.time()  # 获取当前时间
 					speed = float(payload)  # 从 MQTT 消息中提取 speed 数据
@@ -3773,13 +3689,13 @@ def process_message_queue():
 					pass  # 如果解析速度失败，忽略
 
 			# 其他现有逻辑保留不变
-			if topic == "teslamate/cars/1/usable_battery_level":
+			if topic == f"teslamate/cars/{CAR_NUM}/usable_battery_level":
 				usable_battery_level = float(payload)  # 更新电池百分比
 
 
 
 				
-			if topic == "teslamate/cars/1/update_available":
+			if topic == f"teslamate/cars/{CAR_NUM}/update_available":
 				if str(payload) == "true":
 					if ismaj != "true":
 						ismaj = "true"
@@ -3788,7 +3704,7 @@ def process_message_queue():
 				else:
 					ismaj = "false"
 	
-			if topic == "teslamate/cars/1/state":
+			if topic == f"teslamate/cars/{CAR_NUM}/state":
 				if str(payload) == "online":
 					if etat_connu != str("📶 车辆在线"):
 						etat_connu = str("📶 车辆在线")
@@ -3838,7 +3754,7 @@ def process_message_queue():
 				else:
 					etat_connu = str("❔ 未知状态")  # do not send messages as we don't know what to say, keep quiet and move on... :)
 
-			if topic == "teslamate/cars/1/locked":              # interesting info but at initial startup it gives 1 message for state and 1 message for lock
+			if topic == f"teslamate/cars/{CAR_NUM}/locked":              # interesting info but at initial startup it gives 1 message for state and 1 message for lock
 				if locked != str(payload):                           # We should add a one time pointer to avoid this (golobal)
 					locked = str(payload)
 					if str(locked) == "true": 
@@ -3851,7 +3767,7 @@ def process_message_queue():
 						nouvelleinformation = True
 
 				
-			if topic == "teslamate/cars/1/sentry_mode":      # 哨兵
+			if topic == f"teslamate/cars/{CAR_NUM}/sentry_mode":      # 哨兵
 				if str(payload) == "true": 
 					text_sentry_mode = "🔴哨兵开启"
 					tittle = "🔴哨兵开启"
@@ -3864,7 +3780,7 @@ def process_message_queue():
 					if nouvelleinformation: check_button_status(9)
 
 						
-			if topic == "teslamate/cars/1/doors_open":
+			if topic == f"teslamate/cars/{CAR_NUM}/doors_open":
 				if str(payload) == "false": 
 					doors_state = "✅ 车门已关闭"
 					nouvelleinformation = True
@@ -3876,7 +3792,7 @@ def process_message_queue():
 					if nouvelleinformation: check_button_status(2)
 					tittle = "🚪开门"
 
-			if topic == "teslamate/cars/1/trunk_open":
+			if topic == f"teslamate/cars/{CAR_NUM}/trunk_open":
 				if str(payload) == "false": 
 					trunk_state = "✅ 后备箱已关闭"+"\u00A0"*8
 					nouvelleinformation = True
@@ -3887,7 +3803,7 @@ def process_message_queue():
 					nouvelleinformation = True	
 					if nouvelleinformation: check_button_status(2)
 					tittle = "🚪开后备箱"
-			if topic == "teslamate/cars/1/frunk_open":
+			if topic == f"teslamate/cars/{CAR_NUM}/frunk_open":
 				if str(payload) == "false": 
 					frunk_state = "✅ 前备箱已关闭"
 					nouvelleinformation = True	
@@ -3899,7 +3815,7 @@ def process_message_queue():
 					nouvelleinformation = True	
 					tittle = "🚪开前备箱"
 
-			if topic == "teslamate/cars/1/windows_open":	
+			if topic == f"teslamate/cars/{CAR_NUM}/windows_open":	
 				if str(payload) == "false": windows_state = "✅ 车窗已关闭"
 				elif str(payload) == "true": windows_state = "❌️ 车窗已开启"
 
