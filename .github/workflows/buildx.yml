@@ -1,4 +1,4 @@
-name: Publish Docker images
+name: Publish Docker images old
 
 on:
   workflow_dispatch:
