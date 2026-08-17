@@ -101,7 +101,7 @@ jobs:
         env:
           REGISTRY_IMAGE: ${{ env.REGISTRY_IMAGE }}
         run: |
-          # 统一 tag: teslamate_weather
+          # 统一 tag: teslamate_weather（无 feature- 前缀，无分支名）
           BASE_TAG="${REGISTRY_IMAGE}:teslamate_weather"
           # 创建 multi-arch manifest，指向三个平台的镜像
           docker buildx imagetools create \
