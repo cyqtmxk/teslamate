@@ -38,6 +38,8 @@ jobs:
             cache_key: arm64
     runs-on: ${{ matrix.runs_on }}
     timeout-minutes: 180
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -64,13 +66,14 @@ jobs:
         with:
           images: ${{ env.REGISTRY_IMAGE }}
           tags: |
-            type=raw,value=teslamate_weather-${{ matrix.platform }}
+            type=raw,value=teslamate_weather
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=teslamate_weather
 
-      - name: Build and push
+      - name: Build and push by digest (canonical)
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -80,6 +83,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.cache_key }}
           cache-to: type=gha,scope=${{ matrix.cache_key }},mode=max
+          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
 
   manifest:
     name: Create multi-arch manifest
@@ -97,18 +101,23 @@ jobs:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Create multi-arch manifest
+      - name: Create multi-arch manifest from digests
         env:
           REGISTRY_IMAGE: ${{ env.REGISTRY_IMAGE }}
         run: |
-          # 统一 tag: teslamate_weather（无 feature- 前缀，无分支名）
+          # 收集三个平台的 digest
+          AMD64_DIGEST="${{ needs.build.outputs.digest['linux/amd64'] }}"
+          ARMV7_DIGEST="${{ needs.build.outputs.digest['linux/arm/v7'] }}"
+          ARM64_DIGEST="${{ needs.build.outputs.digest['linux/arm64'] }}"
+          
           BASE_TAG="${REGISTRY_IMAGE}:teslamate_weather"
-          # 创建 multi-arch manifest，指向三个平台的镜像
+          
+          # 使用 digest 创建 multi-arch manifest（不依赖 tag）
           docker buildx imagetools create \
             -t "${BASE_TAG}" \
-            "${REGISTRY_IMAGE}:teslamate_weather-linux-amd64" \
-            "${REGISTRY_IMAGE}:teslamate_weather-linux-arm-v7" \
-            "${REGISTRY_IMAGE}:teslamate_weather-linux-arm64"
+            "${REGISTRY_IMAGE}@sha256:${AMD64_DIGEST}" \
+            "${REGISTRY_IMAGE}@sha256:${ARMV7_DIGEST}" \
+            "${REGISTRY_IMAGE}@sha256:${ARM64_DIGEST}"
           echo "Created multi-arch manifest: ${BASE_TAG}"
 
   build-grafana:
