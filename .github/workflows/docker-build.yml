@@ -38,8 +38,6 @@ jobs:
             cache_key: arm64
     runs-on: ${{ matrix.runs_on }}
     timeout-minutes: 180
-    outputs:
-      digest: ${{ steps.build.outputs.digest }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -72,7 +70,7 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=teslamate_weather
 
-      - name: Build and push by digest (canonical)
+      - name: Build and push by digest
         id: build
         uses: docker/build-push-action@v6
         with:
@@ -84,6 +82,23 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.cache_key }}
           cache-to: type=gha,scope=${{ matrix.cache_key }},mode=max
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export digest
+        id: export_digest
+        run: |
+          DIGEST="${{ steps.build.outputs.digest }}"
+          echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
+          echo "Platform: ${{ matrix.platform }}, Digest: ${DIGEST}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ matrix.cache_key }}
+          path: /tmp/digest.txt
+        env:
+          DIGEST_FILE: /tmp/digest.txt
+        run: |
+          echo "${{ steps.build.outputs.digest }}" > /tmp/digest.txt
 
   manifest:
     name: Create multi-arch manifest
@@ -101,18 +116,33 @@ jobs:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digest-*
+          merge-multiple: true
+
       - name: Create multi-arch manifest
         env:
           REGISTRY_IMAGE: ${{ env.REGISTRY_IMAGE }}
         run: |
-          # 收集三个平台的 digest
-          AMD64_DIGEST="${{ needs.build.outputs.digest['linux/amd64'] }}"
-          ARMV7_DIGEST="${{ needs.build.outputs.digest['linux/arm/v7'] }}"
-          ARM64_DIGEST="${{ needs.build.outputs.digest['linux/arm64'] }}"
+          # 读取三个平台的 digest
+          AMD64_DIGEST=$(cat /tmp/digests/digest-amd64 2>/dev/null || echo "")
+          ARMV7_DIGEST=$(cat /tmp/digests/digest-arm 2>/dev/null || echo "")
+          ARM64_DIGEST=$(cat /tmp/digests/digest-arm64 2>/dev/null || echo "")
+          
+          if [ -z "$AMD64_DIGEST" ] || [ -z "$ARMV7_DIGEST" ] || [ -z "$ARM64_DIGEST" ]; then
+            echo "Error: Missing digests"
+            echo "AMD64: $AMD64_DIGEST"
+            echo "ARMV7: $ARMV7_DIGEST"
+            echo "ARM64: $ARM64_DIGEST"
+            exit 1
+          fi
           
           BASE_TAG="${REGISTRY_IMAGE}:teslamate_weather"
           
-          # 使用 digest 创建 multi-arch manifest（指向单一 tag teslamate_weather）
+          # 使用 digest 创建 multi-arch manifest
           docker buildx imagetools create \
             -t "${BASE_TAG}" \
             "${REGISTRY_IMAGE}@sha256:${AMD64_DIGEST}" \
