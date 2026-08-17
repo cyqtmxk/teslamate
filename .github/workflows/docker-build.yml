@@ -79,7 +79,7 @@ jobs:
           context: .
           platforms: ${{ matrix.platform }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          # 不指定 tags，只推 digest
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.cache_key }}
           cache-to: type=gha,scope=${{ matrix.cache_key }},mode=max
@@ -101,7 +101,7 @@ jobs:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Create multi-arch manifest from digests
+      - name: Create multi-arch manifest
         env:
           REGISTRY_IMAGE: ${{ env.REGISTRY_IMAGE }}
         run: |
@@ -112,7 +112,7 @@ jobs:
           
           BASE_TAG="${REGISTRY_IMAGE}:teslamate_weather"
           
-          # 使用 digest 创建 multi-arch manifest（不依赖 tag）
+          # 使用 digest 创建 multi-arch manifest（指向单一 tag teslamate_weather）
           docker buildx imagetools create \
             -t "${BASE_TAG}" \
             "${REGISTRY_IMAGE}@sha256:${AMD64_DIGEST}" \
