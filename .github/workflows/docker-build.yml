@@ -64,14 +64,11 @@ jobs:
         with:
           images: ${{ env.REGISTRY_IMAGE }}
           tags: |
-            type=ref,event=branch,suffix=-${{ matrix.platform }}
-            type=semver,pattern={{version}},suffix=-${{ matrix.platform }}
-            type=semver,pattern={{major}}.{{minor}},suffix=-${{ matrix.platform }}
-            type=raw,value=edge-${{ matrix.platform }},enable={{is_default_branch}}
+            type=raw,value=teslamate_weather-${{ matrix.platform }}
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.version=${{ github.ref_name }}
+            org.opencontainers.image.version=teslamate_weather
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -103,16 +100,15 @@ jobs:
       - name: Create multi-arch manifest
         env:
           REGISTRY_IMAGE: ${{ env.REGISTRY_IMAGE }}
-          BRANCH_TAG: ${{ github.ref_name == 'main' && 'edge' || github.ref_name }}
         run: |
-          # 构建基础 tag（不含平台后缀）
-          BASE_TAG="${REGISTRY_IMAGE}:${BRANCH_TAG//\//-}"
-          # 创建 multi-arch manifest
+          # 统一 tag: teslamate_weather
+          BASE_TAG="${REGISTRY_IMAGE}:teslamate_weather"
+          # 创建 multi-arch manifest，指向三个平台的镜像
           docker buildx imagetools create \
             -t "${BASE_TAG}" \
-            "${REGISTRY_IMAGE}:${BRANCH_TAG//\//-}-linux-amd64" \
-            "${REGISTRY_IMAGE}:${BRANCH_TAG//\//-}-linux-arm-v7" \
-            "${REGISTRY_IMAGE}:${BRANCH_TAG//\//-}-linux-arm64"
+            "${REGISTRY_IMAGE}:teslamate_weather-linux-amd64" \
+            "${REGISTRY_IMAGE}:teslamate_weather-linux-arm-v7" \
+            "${REGISTRY_IMAGE}:teslamate_weather-linux-arm64"
           echo "Created multi-arch manifest: ${BASE_TAG}"
 
   build-grafana:
