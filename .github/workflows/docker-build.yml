@@ -82,7 +82,7 @@ jobs:
           cache-to: type=gha,scope=${{ matrix.cache_key }},mode=max
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
 
-      - name: Write digest to unique file
+      - name: Write digest to file
         run: |
           echo "${{ steps.build.outputs.digest }}" > /tmp/digest-${{ matrix.cache_key }}.txt
 
@@ -134,11 +134,12 @@ jobs:
           
           BASE_TAG="${REGISTRY_IMAGE}:teslamate_weather"
           
+          # digest 已包含 sha256: 前缀，直接使用
           docker buildx imagetools create \
             -t "${REGISTRY_IMAGE}:teslamate_weather" \
-            "${REGISTRY_IMAGE}@sha256:${AMD64_DIGEST}" \
-            "${REGISTRY_IMAGE}@sha256:${ARMV7_DIGEST}" \
-            "${REGISTRY_IMAGE}@sha256:${ARM64_DIGEST}"
+            "${REGISTRY_IMAGE}@${AMD64_DIGEST}" \
+            "${REGISTRY_IMAGE}@${ARMV7_DIGEST}" \
+            "${REGISTRY_IMAGE}@${ARM64_DIGEST}"
           echo "Created multi-arch manifest: ${BASE_TAG}"
 
   build-grafana:
