@@ -82,15 +82,15 @@ jobs:
           cache-to: type=gha,scope=${{ matrix.cache_key }},mode=max
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
 
-      - name: Write digest to file
+      - name: Write digest to unique file
         run: |
-          echo "${{ steps.build.outputs.digest }}" > /tmp/digest.txt
+          echo "${{ steps.build.outputs.digest }}" > /tmp/digest-${{ matrix.cache_key }}.txt
 
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
           name: digest-${{ matrix.cache_key }}
-          path: /tmp/digest.txt
+          path: /tmp/digest-${{ matrix.cache_key }}.txt
 
   manifest:
     name: Create multi-arch manifest
@@ -119,15 +119,16 @@ jobs:
         env:
           REGISTRY_IMAGE: ${{ env.REGISTRY_IMAGE }}
         run: |
-          AMD64_DIGEST=$(cat /tmp/digests/digest-amd64 2>/dev/null || echo "")
-          ARMV7_DIGEST=$(cat /tmp/digests/digest-arm 2>/dev/null || echo "")
-          ARM64_DIGEST=$(cat /tmp/digests/digest-arm64 2>/dev/null || echo "")
+          AMD64_DIGEST=$(cat /tmp/digests/digest-amd64.txt 2>/dev/null || echo "")
+          ARMV7_DIGEST=$(cat /tmp/digests/digest-arm.txt 2>/dev/null || echo "")
+          ARM64_DIGEST=$(cat /tmp/digests/digest-arm64.txt 2>/dev/null || echo "")
           
           if [ -z "$AMD64_DIGEST" ] || [ -z "$ARMV7_DIGEST" ] || [ -z "$ARM64_DIGEST" ]; then
             echo "Error: Missing digests"
             echo "AMD64: $AMD64_DIGEST"
             echo "ARMV7: $ARMV7_DIGEST"
             echo "ARM64: $ARM64_DIGEST"
+            ls -la /tmp/digests/
             exit 1
           fi
           
